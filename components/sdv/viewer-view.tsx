@@ -100,7 +100,7 @@ export function ViewerView(props: Props) {
   }
 
   const toggleInspector = () => {
-    if (window.innerWidth >= 1024) setDesktopInspector((open) => !open)
+    if (window.innerWidth >= 1280) setDesktopInspector((open) => !open)
     else setMobileInspector((open) => !open)
   }
 
@@ -134,7 +134,7 @@ export function ViewerView(props: Props) {
     <div className="flex h-full min-h-0 flex-col">
       <h1 className="sr-only">Document viewer — {document.originalFilename}</h1>
       {redactMode ? (
-        <div role="toolbar" aria-label="Redaction tools" className="no-print flex h-12 shrink-0 items-center gap-2 overflow-x-auto border-b border-[#f3c4bf] bg-danger-bg px-3">
+        <div role="toolbar" aria-label="Redaction tools" className="no-print flex h-13 shrink-0 items-center gap-2 overflow-x-auto border-b border-[#f3c4bf] bg-danger-bg px-3">
           <span className="flex shrink-0 items-center gap-1.5 rounded-md bg-destructive px-2 py-1 text-[12px] font-semibold text-white">
             <Eraser className="size-3.5" aria-hidden="true" />Redaction mode
           </span>
@@ -171,6 +171,7 @@ export function ViewerView(props: Props) {
           onPrint={props.onPrint}
           onRedact={enterRedaction}
           inspectorOpen={desktopInspector}
+          inspectorCount={state.comments.length}
           onToggleInspector={toggleInspector}
         />
       )}

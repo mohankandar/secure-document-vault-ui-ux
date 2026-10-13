@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState, type KeyboardEvent, type RefObject } from 'react'
+import { useEffect, useState, type KeyboardEvent, type ReactNode, type RefObject } from 'react'
 import { ArrowLeft, ChevronDown, ChevronLeft, ChevronRight, ChevronUp, Download, Eraser, PanelRight, Printer, Search, X, ZoomIn, ZoomOut } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import type { RecordDocument } from '@/lib/sdv/types'
@@ -87,7 +87,16 @@ type Props = {
   onPrint: () => void
   onRedact: () => void
   inspectorOpen: boolean
+  inspectorCount: number
   onToggleInspector: () => void
+}
+
+function Group({ children, label, className }: { children: ReactNode; label: string; className?: string }) {
+  return (
+    <div role="group" aria-label={label} className={cn('flex h-9 shrink-0 items-center gap-0.5 rounded-lg bg-muted px-0.5 ring-1 ring-border-soft ring-inset', className)}>
+      {children}
+    </div>
+  )
 }
 
 function PageInput({ page, pageCount, onGoTo }: { page: number; pageCount: number; onGoTo: (page: number) => void }) {
@@ -108,7 +117,7 @@ function PageInput({ page, pageCount, onGoTo }: { page: number; pageCount: numbe
         onChange={(e) => setValue(e.target.value.replace(/\D/g, ''))}
         onBlur={commit}
         onKeyDown={(e) => e.key === 'Enter' && commit()}
-        className="h-8 w-10 rounded-md border border-input bg-card text-center text-[13px] text-strong tabular-nums shadow-xs focus-visible:border-primary focus-visible:ring-3 focus-visible:ring-primary/20 focus-visible:outline-none"
+        className="h-7 w-10 rounded-md border border-input bg-card text-center text-[13px] text-strong tabular-nums shadow-xs focus-visible:border-primary focus-visible:ring-3 focus-visible:ring-primary/20 focus-visible:outline-none"
       />
       <span className="whitespace-nowrap tabular-nums">of {pageCount}</span>
     </div>
@@ -124,47 +133,48 @@ export function ViewerToolbar(props: Props) {
   }
 
   return (
-    <div role="toolbar" aria-label="Document tools" className="no-print flex h-12 shrink-0 items-center gap-1 overflow-x-auto border-b border-border bg-card px-2">
+    <div role="toolbar" aria-label="Document tools" className="no-print flex h-13 shrink-0 items-center gap-1.5 overflow-x-auto border-b border-border bg-card px-3">
       <Button variant="toolbar" size="sm" onClick={onBack} aria-label="Back to Results" title="Back to Results" className="shrink-0 px-2">
-        <ArrowLeft /><span className="hidden lg:inline">Results</span>
+        <ArrowLeft /><span className="hidden xl:inline">Results</span>
       </Button>
-      <Divider />
       <label className="sr-only" htmlFor="document-switcher">Document</label>
-      <Select id="document-switcher" value={documentId} onChange={(e) => onSelectDocument(e.target.value)} className="h-8 w-36 shrink-0 text-[13px] font-medium md:w-48">
+      <Select id="document-switcher" value={documentId} onChange={(e) => onSelectDocument(e.target.value)} className="h-9 w-40 shrink-0 text-[13px] font-semibold xl:w-52">
         {documents.map((document) => (
           <option key={document.documentId} value={document.documentId}>{document.originalFilename}</option>
         ))}
       </Select>
-      <Divider />
-      <Button variant="toolbar" size="icon-sm" onClick={() => onGoTo(page - 1)} disabled={page <= 1} aria-label="Previous page" title="Previous page">
-        <ChevronLeft />
-      </Button>
-      <PageInput page={page} pageCount={pageCount} onGoTo={onGoTo} />
-      <Button variant="toolbar" size="icon-sm" onClick={() => onGoTo(page + 1)} disabled={page >= pageCount} aria-label="Next page" title="Next page">
-        <ChevronRight />
-      </Button>
-      <Divider className="hidden sm:block" />
-      <Button variant="toolbar" size="icon-sm" onClick={() => stepZoom(-1)} disabled={percent <= ZOOM_STEPS[0]} aria-label="Zoom out" title="Zoom out" className="hidden sm:inline-flex">
-        <ZoomOut />
-      </Button>
-      <label className="sr-only" htmlFor="zoom-select">Zoom</label>
-      <Select
-        id="zoom-select"
-        value={String(zoom)}
-        onChange={(e) => onZoom(e.target.value === 'fit' ? 'fit' : Number(e.target.value))}
-        className="hidden h-8 w-[6.5rem] shrink-0 text-[13px] tabular-nums sm:block"
-      >
-        <option value="fit">{zoom === 'fit' ? `Fit · ${percent}%` : 'Fit width'}</option>
-        {ZOOM_STEPS.map((step) => (
-          <option key={step} value={step}>{step}%</option>
-        ))}
-      </Select>
-      <Button variant="toolbar" size="icon-sm" onClick={() => stepZoom(1)} disabled={percent >= ZOOM_STEPS.at(-1)!} aria-label="Zoom in" title="Zoom in" className="hidden sm:inline-flex">
-        <ZoomIn />
-      </Button>
+      <Group label="Pages">
+        <Button variant="toolbar" size="icon-sm" onClick={() => onGoTo(page - 1)} disabled={page <= 1} aria-label="Previous page" title="Previous page" className="hover:bg-card">
+          <ChevronLeft />
+        </Button>
+        <PageInput page={page} pageCount={pageCount} onGoTo={onGoTo} />
+        <Button variant="toolbar" size="icon-sm" onClick={() => onGoTo(page + 1)} disabled={page >= pageCount} aria-label="Next page" title="Next page" className="hover:bg-card">
+          <ChevronRight />
+        </Button>
+      </Group>
+      <Group label="Zoom" className="hidden sm:flex">
+        <Button variant="toolbar" size="icon-sm" onClick={() => stepZoom(-1)} disabled={percent <= ZOOM_STEPS[0]} aria-label="Zoom out" title="Zoom out" className="hover:bg-card">
+          <ZoomOut />
+        </Button>
+        <label className="sr-only" htmlFor="zoom-select">Zoom</label>
+        <Select
+          id="zoom-select"
+          value={String(zoom)}
+          onChange={(e) => onZoom(e.target.value === 'fit' ? 'fit' : Number(e.target.value))}
+          className="h-7 w-[7.75rem] shrink-0 border-transparent bg-transparent text-[13px] font-medium tabular-nums shadow-none hover:border-input"
+        >
+          <option value="fit">{zoom === 'fit' ? `Fit · ${percent}%` : 'Fit width'}</option>
+          {ZOOM_STEPS.map((step) => (
+            <option key={step} value={step}>{step}%</option>
+          ))}
+        </Select>
+        <Button variant="toolbar" size="icon-sm" onClick={() => stepZoom(1)} disabled={percent >= ZOOM_STEPS.at(-1)!} aria-label="Zoom in" title="Zoom in" className="hover:bg-card">
+          <ZoomIn />
+        </Button>
+      </Group>
 
       <div className="ml-auto flex shrink-0 items-center gap-1 pl-2">
-        <DocumentSearch {...search} className="hidden w-64 xl:flex" />
+        <DocumentSearch {...search} className="hidden h-9 w-60 xl:flex 2xl:w-72" />
         <Button variant="toolbar" size="icon-sm" onClick={onOpenFloatingSearch} aria-label="Search in document" title="Search in document (Ctrl+F)" className="xl:hidden">
           <Search />
         </Button>
@@ -188,8 +198,12 @@ export function ViewerToolbar(props: Props) {
           </>
         )}
         <Divider />
-        <Button variant="toolbar" size="icon-sm" aria-pressed={props.inspectorOpen} onClick={props.onToggleInspector} aria-label="Toggle comments, tags and details panel" title="Comments, tags & details">
+        <Button variant="toolbar" size="sm" aria-pressed={props.inspectorOpen} onClick={props.onToggleInspector} aria-label="Toggle comments, tags and details panel" title="Comments, tags & details" className="px-2">
           <PanelRight />
+          <span className="hidden md:inline">Details</span>
+          {props.inspectorCount > 0 && (
+            <span className="rounded-full bg-primary px-1.5 text-[10.5px] leading-[17px] font-semibold text-primary-foreground tabular-nums">{props.inspectorCount}</span>
+          )}
         </Button>
       </div>
     </div>

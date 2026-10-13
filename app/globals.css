@@ -6,38 +6,40 @@
 
 /* SDV Enterprise Precision tokens — mirrors frontend/sdv-ui/src/tokens.css */
 :root {
-  --background: #f4f6f8;
-  --foreground: #182230;
+  --background: #f3f5f8;
+  --foreground: #1a2333;
   --card: #ffffff;
-  --card-foreground: #182230;
+  --card-foreground: #1a2333;
   --popover: #ffffff;
-  --popover-foreground: #182230;
-  --primary: #3157c8;
+  --popover-foreground: #1a2333;
+  --primary: #2a55d4;
+  --primary-hover: #2247b8;
   --primary-foreground: #ffffff;
-  --secondary: #f7f9fb;
-  --secondary-foreground: #182230;
-  --muted: #f7f9fb;
-  --muted-foreground: #667085;
-  --accent: #eef2fb;
-  --accent-foreground: #1f3f9e;
+  --secondary: #f6f8fa;
+  --secondary-foreground: #1a2333;
+  --muted: #f6f8fa;
+  --muted-foreground: #687387;
+  --accent: #edf2fd;
+  --accent-foreground: #1d3fa8;
   --destructive: #b42318;
-  --border: #dfe4ea;
-  --input: #cbd3dc;
-  --ring: #3157c8;
-  --radius: 0.375rem;
+  --border: #e2e6ec;
+  --input: #cfd6df;
+  --ring: #2a55d4;
+  --radius: 0.5rem;
 
-  --strong: #0f1728;
-  --secondary-text: #475467;
-  --border-soft: #edf0f3;
-  --selected: #eef2fb;
-  --canvas: #e6e9ee;
+  --strong: #0d1526;
+  --secondary-text: #4a5568;
+  --border-soft: #eef1f5;
+  --selected: #edf2fd;
+  --selected-border: #c3d2f7;
+  --canvas: #dce1e8;
   --danger-bg: #fef3f2;
   --success: #067647;
   --success-bg: #ecfdf3;
   --warning: #b54708;
   --warning-bg: #fffaeb;
 
-  --sidebar: #101828;
+  --sidebar: #0c1322;
   --sidebar-foreground: #c5ced9;
   --sidebar-primary: #ffffff;
   --sidebar-primary-foreground: #101828;
@@ -63,6 +65,8 @@
   --color-popover-foreground: var(--popover-foreground);
   --color-primary: var(--primary);
   --color-primary-foreground: var(--primary-foreground);
+  --color-primary-hover: var(--primary-hover);
+  --color-selected-border: var(--selected-border);
   --color-secondary: var(--secondary);
   --color-secondary-foreground: var(--secondary-foreground);
   --color-muted: var(--muted);
@@ -100,6 +104,16 @@
   --radius-md: var(--radius);
   --radius-lg: calc(var(--radius) * 1.33);
   --radius-xl: calc(var(--radius) * 1.66);
+}
+
+/* The one raised surface in the system: hairline ring + whisper shadow, no heavy borders. */
+@utility panel {
+  background-color: var(--card);
+  border-radius: calc(var(--radius) * 1.33);
+  box-shadow:
+    0 0 0 1px var(--border),
+    0 1px 2px rgb(13 21 38 / 0.04),
+    0 2px 6px -2px rgb(13 21 38 / 0.04);
 }
 
 @layer base {

@@ -36,17 +36,17 @@ export function ViewerInspector({ record, document, pageCount, state, canComment
 
   return (
     <>
-      {mobileOpen && <div className="no-print fixed inset-0 z-40 bg-[#101828]/30 lg:hidden" onClick={onClose} aria-hidden="true" />}
+      {mobileOpen && <div className="no-print fixed inset-0 z-40 bg-[#0d1526]/35 backdrop-blur-[1px] xl:hidden" onClick={onClose} aria-hidden="true" />}
       <aside
         aria-label="Document information"
         className={cn(
           'no-print flex-col border-l border-border bg-card',
-          'fixed inset-y-0 right-0 z-50 w-[min(22rem,90vw)] shadow-xl lg:static lg:z-auto lg:w-72 lg:shadow-none xl:w-80',
+          'fixed inset-y-0 right-0 z-50 w-[min(23rem,92vw)] shadow-[-12px_0_32px_rgb(13_21_38/0.14)] xl:static xl:z-auto xl:w-80 xl:shadow-none 2xl:w-[22rem]',
           mobileOpen ? 'flex' : 'hidden',
-          desktopOpen ? 'lg:flex' : 'lg:hidden',
+          desktopOpen ? 'xl:flex' : 'xl:hidden',
         )}
       >
-        <div className="flex h-11 shrink-0 items-stretch border-b border-border pr-1 pl-2" role="tablist" aria-label="Document panels">
+        <div className="flex h-12 shrink-0 items-stretch border-b border-border pr-1 pl-2" role="tablist" aria-label="Document panels">
           {tabs.map((item) => (
             <button
               key={item.id}
@@ -65,7 +65,7 @@ export function ViewerInspector({ record, document, pageCount, state, canComment
               {item.count !== undefined && <span className="rounded-full bg-muted px-1.5 text-[11px] leading-[18px] text-secondary-text tabular-nums ring-1 ring-border">{item.count}</span>}
             </button>
           ))}
-          <button type="button" onClick={onClose} className="my-auto ml-auto grid size-8 place-items-center rounded-md text-muted-foreground hover:bg-muted hover:text-strong lg:hidden" aria-label="Close panel">
+          <button type="button" onClick={onClose} className="my-auto ml-auto grid size-8 place-items-center rounded-md text-muted-foreground hover:bg-muted hover:text-strong xl:hidden" aria-label="Close panel">
             <X className="size-4" />
           </button>
         </div>
