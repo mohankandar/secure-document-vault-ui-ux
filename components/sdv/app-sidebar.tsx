@@ -27,6 +27,10 @@ const NAV = [
 export function AppSidebar({ collapsed, mobileOpen, onToggle, onCloseMobile, persona, onPersonaChange, capabilities, onToggleCapability }: Props) {
   const current = PERSONAS.find((item) => item.value === persona)!
   const initials = current.user.slice(0, 2).toUpperCase()
+  // Laptop widths (lg–xl) always get the icon rail so content keeps its space; xl+ honours the user's toggle.
+  const rail = collapsed
+    ? { hide: 'lg:hidden', sr: 'lg:sr-only', center: 'lg:justify-center lg:px-0' }
+    : { hide: 'lg:max-xl:hidden', sr: 'lg:max-xl:sr-only', center: 'lg:max-xl:justify-center lg:max-xl:px-0' }
 
   return (
     <>
@@ -37,12 +41,12 @@ export function AppSidebar({ collapsed, mobileOpen, onToggle, onCloseMobile, per
           'no-print z-50 flex shrink-0 flex-col bg-sidebar text-sidebar-foreground transition-[width] duration-150',
           'fixed inset-y-0 left-0 w-64 -translate-x-full lg:static lg:translate-x-0',
           mobileOpen && 'translate-x-0',
-          collapsed ? 'lg:w-14' : 'lg:w-56',
+          collapsed ? 'lg:w-14' : 'lg:w-14 xl:w-60',
         )}
       >
-        <div className={cn('flex h-12 items-center gap-2.5 border-b border-sidebar-border px-3', collapsed && 'lg:justify-center lg:px-0')}>
+        <div className={cn('flex h-12 items-center gap-2.5 border-b border-sidebar-border px-3', rail.center)}>
           <span className="grid size-7 shrink-0 place-items-center rounded-md bg-primary text-[13px] font-bold text-white">S</span>
-          <div className={cn('min-w-0 flex-1 leading-tight', collapsed && 'lg:hidden')}>
+          <div className={cn('min-w-0 flex-1 leading-tight', rail.hide)}>
             <p className="truncate text-[13px] font-semibold text-white">Secure Document Vault</p>
             <p className="text-[11px] text-[#98a2b3]">Northbridge Financial</p>
           </div>
@@ -54,7 +58,7 @@ export function AppSidebar({ collapsed, mobileOpen, onToggle, onCloseMobile, per
         <nav className="flex-1 overflow-y-auto px-2 py-3" aria-label="Primary navigation">
           {NAV.map((section) => (
             <div key={section.title} className="mb-3">
-              <p className={cn('px-2 pb-1 text-[10px] font-semibold tracking-wider text-[#667085] uppercase', collapsed && 'lg:sr-only')}>{section.title}</p>
+              <p className={cn('px-2 pb-1 text-[10px] font-semibold tracking-wider text-[#667085] uppercase', rail.sr)}>{section.title}</p>
               {section.items.map((item) => (
                 <button
                   key={item.label}
@@ -63,20 +67,20 @@ export function AppSidebar({ collapsed, mobileOpen, onToggle, onCloseMobile, per
                   disabled={!item.active}
                   title={item.active ? item.label : `${item.label} — out of scope for this design exercise`}
                   className={cn(
-                    'flex h-9 w-full items-center gap-2.5 rounded-md px-2 text-[13px] font-medium',
-                    item.active ? 'bg-sidebar-accent text-white' : 'text-sidebar-foreground/60',
-                    collapsed && 'lg:justify-center lg:px-0',
+                    'relative flex h-10 w-full items-center gap-2.5 rounded-md px-2.5 text-[13px] font-medium',
+                    item.active ? 'bg-sidebar-accent text-white before:absolute before:inset-y-2 before:-left-2 before:w-0.5 before:rounded-full before:bg-[#7c9cf5]' : 'text-sidebar-foreground/55',
+                    rail.center,
                   )}
                 >
                   <item.icon className="size-4 shrink-0" aria-hidden="true" />
-                  <span className={cn(collapsed && 'lg:sr-only')}>{item.label}</span>
+                  <span className={cn(rail.sr)}>{item.label}</span>
                 </button>
               ))}
             </div>
           ))}
         </nav>
 
-        <div className={cn('border-t border-sidebar-border p-2', collapsed && 'lg:hidden')}>
+        <div className={cn('border-t border-sidebar-border p-2', rail.hide)}>
           <details className="group rounded-md bg-sidebar-accent/60">
             <summary className="flex cursor-pointer list-none items-center gap-2 px-2.5 py-2 text-[12px] font-medium text-white">
               <SlidersHorizontal className="size-3.5" aria-hidden="true" />
@@ -113,9 +117,9 @@ export function AppSidebar({ collapsed, mobileOpen, onToggle, onCloseMobile, per
           </Link>
         </div>
 
-        <div className={cn('flex items-center gap-2.5 border-t border-sidebar-border p-3', collapsed && 'lg:justify-center lg:px-0')}>
+        <div className={cn('flex items-center gap-2.5 border-t border-sidebar-border p-3', rail.center)}>
           <span className="grid size-7 shrink-0 place-items-center rounded-full bg-[#344054] text-[11px] font-semibold text-white" aria-hidden="true">{initials}</span>
-          <div className={cn('min-w-0 flex-1 leading-tight', collapsed && 'lg:hidden')}>
+          <div className={cn('min-w-0 flex-1 leading-tight', rail.hide)}>
             <p className="truncate text-[12px] font-medium text-white">{current.user}</p>
             <p className="text-[11px] text-[#98a2b3]">{current.label} · local</p>
           </div>
@@ -124,7 +128,7 @@ export function AppSidebar({ collapsed, mobileOpen, onToggle, onCloseMobile, per
         <button
           type="button"
           onClick={onToggle}
-          className="hidden h-9 items-center justify-center gap-2 border-t border-sidebar-border text-[12px] text-[#98a2b3] hover:bg-sidebar-accent hover:text-white lg:flex"
+          className="hidden h-10 items-center justify-center gap-2 border-t border-sidebar-border text-[12px] text-[#98a2b3] hover:bg-sidebar-accent hover:text-white xl:flex"
           aria-label={collapsed ? 'Expand navigation' : 'Collapse navigation'}
         >
           {collapsed ? <ChevronsRight className="size-4" /> : <><ChevronsLeft className="size-4" /> Collapse</>}

@@ -145,7 +145,7 @@ export function SdvWorkspace({ initialTab }: { initialTab: WorkflowTab }) {
       />
 
       <div className="flex min-w-0 flex-1 flex-col">
-        <WorkflowNav tab={tab} onTab={goTo} resultCount={results?.length ?? null} canOpenViewer={Boolean(document && can('VIEW_PDF'))} record={record} onOpenMenu={() => setMobileNav(true)} />
+        <WorkflowNav tab={tab} onTab={goTo} resultCount={results?.length ?? null} canOpenViewer={Boolean(document && can('VIEW_PDF'))} hasRecord={Boolean(record)} record={tab === 'viewer' || tab === 'activity' ? record : null} onOpenMenu={() => setMobileNav(true)} />
 
         <main className={tab === 'viewer' ? 'min-h-0 flex-1 overflow-hidden' : 'min-h-0 flex-1 overflow-y-auto'}>
           {tab === 'search' && (
