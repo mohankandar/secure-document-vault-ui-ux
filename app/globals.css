@@ -1,0 +1,123 @@
+@import 'tailwindcss';
+@import 'tw-animate-css';
+@import 'shadcn/tailwind.css';
+
+@custom-variant dark (&:is(.dark *));
+
+/* SDV Enterprise Precision tokens — mirrors frontend/sdv-ui/src/tokens.css */
+:root {
+  --background: #f4f6f8;
+  --foreground: #182230;
+  --card: #ffffff;
+  --card-foreground: #182230;
+  --popover: #ffffff;
+  --popover-foreground: #182230;
+  --primary: #3157c8;
+  --primary-foreground: #ffffff;
+  --secondary: #f7f9fb;
+  --secondary-foreground: #182230;
+  --muted: #f7f9fb;
+  --muted-foreground: #667085;
+  --accent: #eef2fb;
+  --accent-foreground: #1f3f9e;
+  --destructive: #b42318;
+  --border: #dfe4ea;
+  --input: #cbd3dc;
+  --ring: #3157c8;
+  --radius: 0.375rem;
+
+  --strong: #0f1728;
+  --secondary-text: #475467;
+  --border-soft: #edf0f3;
+  --selected: #eef2fb;
+  --canvas: #e6e9ee;
+  --danger-bg: #fef3f2;
+  --success: #067647;
+  --success-bg: #ecfdf3;
+  --warning: #b54708;
+  --warning-bg: #fffaeb;
+
+  --sidebar: #101828;
+  --sidebar-foreground: #c5ced9;
+  --sidebar-primary: #ffffff;
+  --sidebar-primary-foreground: #101828;
+  --sidebar-accent: #1d2939;
+  --sidebar-accent-foreground: #ffffff;
+  --sidebar-border: #283447;
+  --sidebar-ring: #3157c8;
+
+  --chart-1: #3157c8;
+  --chart-2: #5e5bb3;
+  --chart-3: #067647;
+  --chart-4: #b54708;
+  --chart-5: #b42318;
+}
+
+@theme inline {
+  --font-sans: var(--font-inter), ui-sans-serif, system-ui, sans-serif;
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+  --color-strong: var(--strong);
+  --color-secondary-text: var(--secondary-text);
+  --color-border-soft: var(--border-soft);
+  --color-selected: var(--selected);
+  --color-canvas: var(--canvas);
+  --color-danger-bg: var(--danger-bg);
+  --color-success: var(--success);
+  --color-success-bg: var(--success-bg);
+  --color-warning: var(--warning);
+  --color-warning-bg: var(--warning-bg);
+  --color-sidebar: var(--sidebar);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar-primary: var(--sidebar-primary);
+  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-sidebar-ring: var(--sidebar-ring);
+  --color-chart-1: var(--chart-1);
+  --color-chart-2: var(--chart-2);
+  --color-chart-3: var(--chart-3);
+  --color-chart-4: var(--chart-4);
+  --color-chart-5: var(--chart-5);
+  --radius-sm: calc(var(--radius) * 0.75);
+  --radius-md: var(--radius);
+  --radius-lg: calc(var(--radius) * 1.33);
+  --radius-xl: calc(var(--radius) * 1.66);
+}
+
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+  body {
+    @apply bg-background text-foreground;
+    font-feature-settings: 'cv11', 'ss01';
+  }
+  :focus-visible {
+    outline: 2px solid var(--ring);
+    outline-offset: 1px;
+  }
+}
+
+@media print {
+  .no-print {
+    display: none !important;
+  }
+}
