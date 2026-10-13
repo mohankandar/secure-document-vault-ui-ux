@@ -64,6 +64,7 @@ const clamp = (value: number, min: number, max: number) => Math.min(max, Math.ma
 
 export function PdfViewer({ documentId, filename, documents = [], selectedDocumentId, onSelectDocument, persona, canRedact, canDownload, canPrint, canTag, canComment, embedded = false, onClose }: Props) {
   const [metadata, setMetadata] = useState<ViewerMetadata | null>(null)
+  const [metadataLoading, setMetadataLoading] = useState(true)
   const [page, setPage] = useState(1)
   const [jump, setJump] = useState('1')
   const [zoom, setZoom] = useState(1)
@@ -104,10 +105,14 @@ export function PdfViewer({ documentId, filename, documents = [], selectedDocume
 
   const pageCount = metadata?.pageCount ?? 0
   const fitScale = useMemo(() => {
-    if (!pageSize || !canvasSize.width || !canvasSize.height) return null
-    const gutter = 40
-    return clamp(Math.min((canvasSize.width - gutter) / pageSize.width, (canvasSize.height - gutter) / pageSize.height), 0.25, 2.5)
-  }, [pageSize, canvasSize])
+    if (!pageSize || !canvasSize.width) return null
+    const wideWorkspace = canvasSize.width >= 1360
+    const horizontalGutter = wideWorkspace ? 64 : 48
+    const targetWidth = wideWorkspace
+      ? Math.min(canvasSize.width - horizontalGutter, 1280)
+      : canvasSize.width - horizontalGutter
+    return clamp(targetWidth / pageSize.width, 0.5, 2.5)
+  }, [pageSize, canvasSize.width])
   const displayScale = fitToPage && fitScale ? fitScale : zoom
   const renderScale = useMemo(() => {
     if (!fitToPage || !fitScale) return zoom
@@ -159,9 +164,16 @@ export function PdfViewer({ documentId, filename, documents = [], selectedDocume
     setDetailsPanelOpen(false)
     setShowAllComments(false)
 
+    setMetadataLoading(true)
     contentApi<ViewerMetadata>(`/api/v1/business/documents/${documentId}/viewer`, persona)
       .then((value) => {
         if (active) setMetadata(value)
+      })
+      .catch((reasonValue: unknown) => {
+        if (active) setError(reasonValue instanceof Error ? reasonValue.message : 'Could not load document page information.')
+      })
+      .finally(() => {
+        if (active) setMetadataLoading(false)
       })
     contentApi<DocumentTag[]>(`/api/v1/business/documents/${documentId}/tags`, persona)
       .then((value) => { if (active) setTags(value) })
@@ -453,21 +465,25 @@ export function PdfViewer({ documentId, filename, documents = [], selectedDocume
 
         <div className={`viewer-toolbar ${embedded ? 'viewer-toolbar-premium' : ''}`}>
           {embedded && (
-            <>
+            <div className="viewer-toolbar-leading">
               <button type="button" className="viewer-back-action" onClick={onClose} aria-label="Back to results">←</button>
-              <label className="viewer-document-picker">
-                <span className="sr-only">Document</span>
-                <select value={selectedDocumentId ?? documentId} onChange={(event) => onSelectDocument?.(event.target.value)} disabled={redactionMode || documents.length <= 1}>
-                  {(documents.length ? documents : [{ documentId, originalFilename: filename } as RecordDocument]).map((document) => <option key={document.documentId} value={document.documentId}>{document.originalFilename}</option>)}
-                </select>
-              </label>
-            </>
+              {documents.length > 1 ? (
+                <label className="viewer-document-picker">
+                  <span className="sr-only">Document</span>
+                  <select value={selectedDocumentId ?? documentId} onChange={(event) => onSelectDocument?.(event.target.value)} disabled={redactionMode}>
+                    {documents.map((document) => <option key={document.documentId} value={document.documentId}>{document.originalFilename}</option>)}
+                  </select>
+                </label>
+              ) : (
+                <div className="viewer-document-single" aria-label="Document">{metadata?.originalFilename ?? filename}</div>
+              )}
+            </div>
           )}
 
           <form className="viewer-jump viewer-control-cluster" onSubmit={jumpToPage}>
             <button type="button" className="viewer-icon-button" aria-label="Previous page" disabled={page <= 1} onClick={() => goToPage(page - 1)}>‹</button>
             <input inputMode="numeric" value={jump} onChange={(event) => setJump(event.target.value)} aria-label="Page number" />
-            <span>of {pageCount || '—'}</span>
+            <span>of {pageCount || (metadataLoading ? '…' : '—')}</span>
             <button type="button" className="viewer-icon-button" aria-label="Next page" disabled={!metadata || page >= pageCount} onClick={() => goToPage(page + 1)}>›</button>
           </form>
 
@@ -475,7 +491,7 @@ export function PdfViewer({ documentId, filename, documents = [], selectedDocume
             <button className="viewer-icon-button" aria-label="Zoom out" disabled={displayScale <= 0.5 || redactionMode} onClick={() => stepZoom(-0.25)}>−</button>
             <strong aria-live="polite">{zoomPercent}%</strong>
             <button className="viewer-icon-button" aria-label="Zoom in" disabled={displayScale >= 2.5 || redactionMode} onClick={() => stepZoom(0.25)}>+</button>
-            <button type="button" className={`viewer-fit-action ${fitToPage ? 'active' : ''}`} aria-pressed={fitToPage} disabled={redactionMode} onClick={() => setFitToPage(true)}>Fit</button>
+            <button type="button" className={`viewer-fit-action ${fitToPage ? 'active' : ''}`} aria-label="Fit document to viewer width" title="Fit to width" aria-pressed={fitToPage} disabled={redactionMode} onClick={() => setFitToPage(true)}>Fit</button>
           </div>
 
           <form className="viewer-search" onSubmit={search}>
@@ -589,10 +605,10 @@ export function PdfViewer({ documentId, filename, documents = [], selectedDocume
           )}
         </div>
           {embedded && (
-            <footer className="viewer-seal" aria-label="Document custody">
+            <footer className="viewer-seal" aria-label="Secure document context">
               <span className="viewer-seal-mark"><Icon name="eye" />Secure view</span>
               <span className="viewer-seal-file">{metadata?.originalFilename ?? filename}</span>
-              <span>Page {page} of {pageCount || '—'}</span>
+              <span>Page {page} of {pageCount || (metadataLoading ? '…' : '—')}</span>
               {formatSealDate(currentDocument?.ingestedAt) && <span>Ingested {formatSealDate(currentDocument?.ingestedAt)}</span>}
               {formatSealDate(currentDocument?.availableAt) && <span>Available {formatSealDate(currentDocument?.availableAt)}</span>}
               {formatSealDate(currentDocument?.expiresAt) && <span className="viewer-seal-retention">Retained until {formatSealDate(currentDocument?.expiresAt)}</span>}
