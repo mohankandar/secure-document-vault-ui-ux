@@ -124,20 +124,26 @@ async function captureAdminTabs(page: Page, testInfo: TestInfo, tabs: string[], 
   }
 }
 
-async function tryBusinessRecordJourney(page: Page, testInfo: TestInfo) {
+async function waitForBusinessSearchReady(page: Page) {
+  await expect(page.getByText('Loading search fields…')).toHaveCount(0, { timeout: 15000 })
   const sourceSelect = page.getByLabel('Search source')
-  if (await sourceSelect.isVisible().catch(() => false)) {
-    const options = await sourceSelect.locator('option').allTextContents()
-    const preferred = options.find((option) => option.toLowerCase().includes('laxavault'))
-      ?? options.find((option) => option.toLowerCase().includes('lexavault'))
-    if (preferred) {
-      await sourceSelect.selectOption({ label: preferred })
-      await page.waitForTimeout(200)
-    }
+  await expect(sourceSelect).toBeVisible({ timeout: 15000 })
+  await expect(page.getByLabel(/Contract Number/i).first()).toBeVisible({ timeout: 15000 })
+}
+
+async function tryBusinessRecordJourney(page: Page, testInfo: TestInfo) {
+  await waitForBusinessSearchReady(page)
+
+  const sourceSelect = page.getByLabel('Search source')
+  const options = await sourceSelect.locator('option').allTextContents()
+  const preferred = options.find((option) => option.toLowerCase().includes('laxavault'))
+    ?? options.find((option) => option.toLowerCase().includes('lexavault'))
+  if (preferred) {
+    await sourceSelect.selectOption({ label: preferred })
+    await page.waitForTimeout(200)
   }
 
   const contract = page.getByLabel(/Contract Number/i).first()
-  if (!(await contract.isVisible().catch(() => false))) return
 
   await contract.fill(demoRecord)
   await page.getByRole('button', { name: 'Search records', exact: true }).click()
@@ -148,7 +154,9 @@ async function tryBusinessRecordJourney(page: Page, testInfo: TestInfo) {
   if (!(await recordRow.isVisible().catch(() => false))) return
 
   await recordRow.click()
-  await page.waitForTimeout(250)
+  await expect(page.getByLabel('Selected record inspector')).toBeVisible({ timeout: 15000 })
+  await expect(page.getByRole('button', { name: /open document/i })).toBeVisible({ timeout: 15000 })
+  await page.waitForTimeout(150)
   await capture(page, testInfo, 'record-inspector')
 
   const openDocument = page.getByRole('button', { name: /open document/i })
@@ -175,12 +183,14 @@ test.describe('SDV role-based screen capture', () => {
 
   test('Business User screens', async ({ page }, testInfo) => {
     await selectRole(page, 'Business User')
+    await waitForBusinessSearchReady(page)
     await capture(page, testInfo, 'search')
     await tryBusinessRecordJourney(page, testInfo)
   })
 
   test('Document Steward screens', async ({ page }, testInfo) => {
     await selectRole(page, 'Document Steward')
+    await waitForBusinessSearchReady(page)
     await capture(page, testInfo, 'search')
     await tryBusinessRecordJourney(page, testInfo)
   })
