@@ -67,53 +67,30 @@ h1, h2, h3, h4 { letter-spacing: -0.011em; }
 .vero-tenant-card { margin: 4px 12px 8px; min-height: 40px; padding: 8px 10px; }
 .vero-tenant-name { font-size: var(--type-body-sm); font-weight: var(--weight-medium); }
 
-.ds-nav { display: flex; flex-direction: column; gap: 14px; padding: 8px 10px 16px; overflow-y: auto; flex: 1; }
-.ds-nav-section { display: flex; flex-direction: column; gap: 1px; }
-.ds-nav-heading {
-  display: flex; align-items: center; gap: 8px;
-  min-height: 28px; padding: 0 8px;
-  color: var(--ui-sidebar-muted);
-  font-size: var(--type-sm); font-weight: var(--weight-medium);
-}
-.ds-nav-heading svg { width: 16px; height: 16px; flex: none; }
+/* The same list of primary areas renders expanded and collapsed; collapsing only hides the labels. */
+.ds-nav { display: flex; flex-direction: column; gap: 2px; padding: 8px 10px 16px; overflow-y: auto; flex: 1; }
 .ds-nav-link {
   position: relative;
-  display: flex; align-items: center; gap: 8px;
-  width: 100%; min-height: 32px; padding: 0 10px 0 32px;
+  display: flex; align-items: center; gap: 10px;
+  width: 100%; min-height: 36px; padding: 0 10px;
   border: 0; border-radius: 6px; background: transparent;
   color: var(--ui-sidebar-text);
   font-size: var(--type-body-sm); font-weight: var(--weight-regular);
   text-align: left; cursor: pointer;
 }
+.ds-nav-link svg { width: 18px; height: 18px; flex: none; }
+.ds-nav-label { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .ds-nav-link:hover { background: rgba(255, 255, 255, .05); color: #fff; }
-.ds-nav-link.active { background: rgba(255, 255, 255, .08); color: #fff; font-weight: var(--weight-medium); }
-.ds-nav-link.active::before {
-  content: ""; position: absolute; left: 14px; top: 9px; bottom: 9px; width: 2px; border-radius: 2px; background: var(--brand-accent);
-  filter: brightness(1.35);
-}
+.ds-nav-link.active { background: rgba(255, 255, 255, .1); color: #fff; font-weight: var(--weight-medium); }
 .ds-nav-link:focus-visible { outline: 2px solid rgba(var(--brand-accent-rgb), .6); outline-offset: -2px; }
 .ds-nav-flag { width: 6px; height: 6px; margin-left: auto; border-radius: 50%; background: #f79009; flex: none; }
-.ds-nav-section.is-single .ds-nav-link { padding-left: 8px; }
-.ds-nav-section.is-single .ds-nav-link svg { width: 16px; height: 16px; flex: none; }
-.ds-nav-section.is-single .ds-nav-link.active::before { display: none; }
 
-.ds-nav-rail { display: none; }
-.sidebar-collapsed .ds-nav { display: none; }
-.sidebar-collapsed .ds-nav-rail { display: flex; flex-direction: column; align-items: center; gap: 4px; padding: 8px 0; flex: 1; }
-.ds-rail-button {
-  position: relative; display: grid; place-items: center;
-  width: 40px; height: 40px; border: 0; border-radius: 8px;
-  background: transparent; color: var(--ui-sidebar-text); cursor: pointer;
+.sidebar-collapsed .ds-nav { align-items: center; padding-inline: 0; }
+.sidebar-collapsed .ds-nav-link { justify-content: center; width: 40px; min-height: 40px; padding: 0; }
+.sidebar-collapsed .ds-nav-label {
+  position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap;
 }
-.ds-rail-button svg { width: 18px; height: 18px; }
-.ds-rail-button:hover { background: rgba(255, 255, 255, .06); color: #fff; }
-.ds-rail-button.active { background: rgba(255, 255, 255, .1); color: #fff; }
-.ds-rail-button .ds-nav-flag { position: absolute; top: 8px; right: 8px; margin: 0; }
-
-/* In-page section tabs duplicate the sidebar when it is expanded on wide screens. */
-@media (min-width: 1025px) {
-  .modern-app-shell:not(.sidebar-collapsed) .ax-workspace > .ax-tabs { display: none; }
-}
+.sidebar-collapsed .ds-nav-flag { position: absolute; top: 8px; right: 8px; margin: 0; }
 
 /* ---------- 3. One page header ---------- */
 .vero-topbar, .vero-topbar.vero-topbar-compact {
@@ -133,8 +110,9 @@ h1, h2, h3, h4 { letter-spacing: -0.011em; }
   white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
 }
 .vero-breadcrumb > span:last-child, .vero-topbar-compact .vero-breadcrumb > span:last-child { color: var(--ui-text-secondary); }
+.modern-app-shell summary { font-family: var(--font-sans); }
+.ds-header-title-row { display: flex; align-items: center; gap: 4px; min-width: 0; }
 .vero-topbar h1, .ds-page-title {
-  display: flex; align-items: center; gap: 6px;
   margin: 0; color: var(--ui-text-strong);
   font-size: var(--type-section-title); font-weight: var(--weight-semibold); line-height: 1.2;
 }
@@ -145,8 +123,13 @@ h1, h2, h3, h4 { letter-spacing: -0.011em; }
 .ds-header-info:hover, .ds-header-info[aria-expanded="true"] { background: var(--ui-surface); color: var(--ui-text-strong); }
 .ds-header-info svg { width: 16px; height: 16px; }
 .vero-topbar-lede, .vero-topbar .vero-topbar-lede {
-  display: block; max-width: 72ch; margin: 2px 0 0;
+  display: block; max-width: 80ch; margin: 0;
   color: var(--ui-text-secondary); font-size: var(--type-body-sm); line-height: 1.45;
+}
+.ds-header-help {
+  max-width: 80ch; margin: 6px 0 2px; padding: 8px 12px;
+  border: 1px solid var(--ui-border); border-radius: 8px; background: var(--ui-surface);
+  color: var(--ui-text); font-size: var(--type-body-sm); line-height: 1.5;
 }
 .vero-topbar-actions { gap: 8px; }
 .vero-system-chip { min-height: 28px; font-size: var(--type-sm); }
@@ -207,6 +190,8 @@ h1, h2, h3, h4 { letter-spacing: -0.011em; }
 @media (max-width: 767px) {
   .modern-main-content, .sidebar-collapsed .modern-main-content { margin-left: 0; padding: 0 16px 32px; }
   .vero-topbar, .vero-topbar.vero-topbar-compact { position: static; margin: 0 -16px 12px; padding: 8px 16px; }
-  .sidebar-collapsed .ds-nav { display: flex; }
-  .sidebar-collapsed .ds-nav-rail { display: none; }
+  .sidebar-collapsed .ds-nav { align-items: stretch; padding-inline: 10px; }
+  .sidebar-collapsed .ds-nav-link { justify-content: flex-start; width: 100%; min-height: 36px; padding: 0 10px; }
+  .sidebar-collapsed .ds-nav-label { position: static; width: auto; height: auto; clip: auto; }
+  .sidebar-collapsed .ds-nav-flag { position: static; margin-left: auto; }
 }
