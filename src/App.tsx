@@ -69,7 +69,15 @@ const VIEW_META: Record<View, { eyebrow: string; title: string; description: str
   audit: { eyebrow: 'Support', title: 'Audit history', description: 'Review append-oriented technical audit evidence without exposing document content.' },
 }
 
-type NavItem = { view: View; label: string; icon: IconName; show: boolean }
+type NavEntry = { key: string; label: string; active: boolean; attention?: boolean; onSelect: () => void }
+type NavSection = { key: string; title: string; icon: IconName; show: boolean; active: boolean; attention?: boolean; entries: NavEntry[] }
+
+// An explicit user choice wins; otherwise iPad-width screens start on the compact rail.
+const preferredSidebarCollapsed = () => {
+  const stored = localStorage.getItem('sdv.ui.sidebarCollapsed')
+  if (stored != null) return stored === 'true'
+  return typeof window !== 'undefined' && window.innerWidth <= 1200
+}
 
 const searchHint = (field: SearchField) => {
   if (field.searchMode === 'PREFIX') return 'Starts with'
@@ -126,7 +134,8 @@ function App() {
   const [view, setView] = useState<View>('search')
   const [session, setSession] = useState<SessionInfo | null>(null)
   const [selectedPersona, setSelectedPersona] = useState<LocalPersona>('business')
-  const [sidebarCollapsed, setSidebarCollapsed] = useState(() => localStorage.getItem('sdv.ui.sidebarCollapsed') === 'true')
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(preferredSidebarCollapsed)
+  const [headerInfoOpen, setHeaderInfoOpen] = useState(false)
   const [drawerOpen, setDrawerOpen] = useState(false)
   const [error, setError] = useState('')
   const [message, setMessage] = useState('')
@@ -843,7 +852,7 @@ function App() {
       setSidebarCollapsed(true)
       return
     }
-    setSidebarCollapsed(localStorage.getItem('sdv.ui.sidebarCollapsed') === 'true')
+    setSidebarCollapsed(preferredSidebarCollapsed())
   }, [])
 
   const signOut = () => {
@@ -863,12 +872,25 @@ function App() {
     return <div className="auth-shell"><div className="auth-card"><span className="brand-lettermark auth-brand">S</span><h1>Secure Document Vault</h1><p>{authDenied ? 'Access denied' : 'Sign in with your organization identity to continue.'}</p>{authError && <div className="banner error">{authError}</div>}<button className="primary-action auth-signin" onClick={() => void beginOidcLogin(authDenied)}>{authDenied ? 'Sign in with a different account' : 'Sign in'}</button></div></div>
   }
 
-  const navGroups: { title: string; items: NavItem[] }[] = [
-    { title: 'Work', items: [{ view: 'search', label: 'Search', icon: 'search', show: canSearchRecords }] },
-    { title: 'Administration', items: [{ view: 'admin', label: 'Administration', icon: 'admin', show: canViewAdministration }] },
-    { title: 'Operations', items: [{ view: 'operations', label: 'Operations', icon: 'operations', show: canViewTechnicalFailures }] },
-    { title: 'Support', items: [{ view: 'audit', label: 'Audit', icon: 'audit', show: canViewTechnicalFailures }] },
+  const isBusinessAdminSurface = selectedPersona === 'businessAdmin'
+  const navAttentionVolumes = operations?.storageVolumes.filter(volumeNeedsAttention).length ?? 0
+  const navIncidentTotal = (operations?.processingFailureCount ?? 0) + (operations?.stuckDocumentCount ?? 0) + (operations?.attentionSubmissionCount ?? 0)
+  const openAdmin = (select: () => void) => () => { select(); navigate('admin') }
+  const openOperations = (tab: PlatformTab) => () => { setPlatformTab(tab); navigate('operations') }
+  const adminEntries: NavEntry[] = isBusinessAdminSurface
+    ? ([['access', 'Users & Access'], ['roles', 'Roles & Permissions'], ['retention', 'Retention Policies'], ['metadata', 'Metadata Configuration']] as [BusinessAdminTab, string][])
+        .map(([id, label]) => ({ key: id, label, active: view === 'admin' && businessAdminTab === id, onSelect: openAdmin(() => setBusinessAdminTab(id)) }))
+    : ([['storage', 'Storage'], ['authentication', 'Authentication'], ['integrations', 'Integrations'], ['environment', 'Environment']] as [TenantItTab, string][])
+        .map(([id, label]) => ({ key: id, label, active: view === 'admin' && tenantItTab === id, attention: id === 'storage' && storageVolumes.some((item) => item.observationError != null || item.warningThresholdReached || item.stopWriteThresholdReached), onSelect: openAdmin(() => setTenantItTab(id)) }))
+  const operationsEntries: NavEntry[] = ([['overview', 'Overview'], ['storage', 'Storage'], ['health', 'Platform Health'], ['incidents', 'Incidents'], ['configuration', 'Configuration']] as [PlatformTab, string][])
+    .map(([id, label]) => ({ key: id, label, active: view === 'operations' && platformTab === id, attention: (id === 'storage' && navAttentionVolumes > 0) || (id === 'incidents' && navIncidentTotal > 0), onSelect: openOperations(id) }))
+  const navSections: NavSection[] = [
+    { key: 'search', title: 'Search', icon: 'search', show: canSearchRecords, active: view === 'search', entries: [{ key: 'search', label: 'Search', active: view === 'search', onSelect: () => navigate('search') }] },
+    { key: 'admin', title: isBusinessAdminSurface ? 'Business Administration' : 'Tenant IT Administration', icon: 'admin', show: canViewAdministration, active: view === 'admin', attention: adminEntries.some((entry) => entry.attention), entries: adminEntries },
+    { key: 'operations', title: 'Platform Operations', icon: 'operations', show: canViewTechnicalFailures, active: view === 'operations', attention: operationsEntries.some((entry) => entry.attention), entries: operationsEntries },
+    { key: 'audit', title: 'Audit history', icon: 'audit', show: canViewTechnicalFailures, active: view === 'audit' || (view === 'operations' && platformTab === 'audit'), entries: [{ key: 'audit', label: 'Audit history', active: view === 'audit' || (view === 'operations' && platformTab === 'audit'), onSelect: () => navigate('audit') }] },
   ]
+  const visibleNavSections = navSections.filter((section) => section.show)
 
   const pageMeta = view === 'admin' && selectedPersona === 'businessAdmin'
     ? { eyebrow: 'Administration', title: 'Business Administration', description: 'Manage business policy, metadata, access design, and document governance for this SDV environment.' }
@@ -1024,19 +1046,30 @@ function App() {
           <span className="vero-tenant-name">{session?.tenantDisplayName || 'Company name unavailable'}</span>
         </div>
 
-        <nav className="modern-sidebar-nav" aria-label="Primary navigation">
-          {navGroups.map((group) => {
-            const visibleItems = group.items.filter((item) => item.show)
-            if (visibleItems.length === 0) return null
-            return <div className="app-nav-group" key={group.title}>
-              <div className="app-nav-group-title">{group.title}</div>
-              {visibleItems.map((item) => (
-                <button key={item.view} type="button" className={`app-nav-link ${view === item.view ? 'active' : ''}`} onClick={() => navigate(item.view)}>
-                  <Icon name={item.icon} />
-                  <span className="app-nav-label">{item.label}</span>
-                </button>
-              ))}
+        <nav className="ds-nav" aria-label="Primary navigation">
+          {visibleNavSections.map((section) => {
+            const single = section.entries.length === 1
+            return <div className={`ds-nav-section ${single ? 'is-single' : ''}`} key={section.key}>
+              {!single && <div className="ds-nav-heading" id={`nav-heading-${section.key}`}><Icon name={section.icon} /><span>{section.title}</span></div>}
+              <div role={single ? undefined : 'group'} aria-labelledby={single ? undefined : `nav-heading-${section.key}`}>
+                {section.entries.map((entry) => (
+                  <button key={entry.key} type="button" className={`ds-nav-link ${entry.active ? 'active' : ''}`} aria-current={entry.active ? 'page' : undefined} onClick={entry.onSelect}>
+                    {single && <Icon name={section.icon} />}
+                    <span>{entry.label}</span>
+                    {entry.attention && <span className="ds-nav-flag" aria-label="Needs attention" />}
+                  </button>
+                ))}
+              </div>
             </div>
+          })}
+        </nav>
+        <nav className="ds-nav-rail" aria-label="Primary navigation (compact)">
+          {visibleNavSections.map((section) => {
+            const target = section.entries.find((entry) => entry.active) ?? section.entries[0]
+            return <button key={section.key} type="button" className={`ds-rail-button ${section.active ? 'active' : ''}`} aria-current={section.active ? 'page' : undefined} aria-label={section.title} title={section.title} onClick={target.onSelect}>
+              <Icon name={section.icon} />
+              {section.attention && <span className="ds-nav-flag" aria-hidden="true" />}
+            </button>
           })}
         </nav>
 
@@ -1062,19 +1095,20 @@ function App() {
 
       <main className="modern-main-content">
         <div className="sdv-page">
-          <header className={`vero-topbar ${view === 'search' ? 'vero-topbar-compact' : ''}`}>
+          <header className="vero-topbar">
             <div className="vero-topbar-copy">
               <nav className="vero-breadcrumb" aria-label="Current location">
                 <span className="vero-breadcrumb-company">{session?.tenantDisplayName || 'Company name unavailable'}</span>
                 <span className="vero-crumb-sep" aria-hidden="true">/</span>
                 <span>{pageMeta.title}</span>
-                {view === 'admin' && <><span className="vero-crumb-sep" aria-hidden="true">/</span><span>{selectedPersona === 'tenantIt' ? humanize(tenantItTab) : humanize(businessAdminTab)}</span></>}
-                {view === 'operations' && <><span className="vero-crumb-sep" aria-hidden="true">/</span><span>{humanize(platformTab)}</span></>}
               </nav>
-              {view !== 'search' && <>
-                <h1>{pageMeta.title}</h1>
-                <p className="vero-topbar-lede">{pageMeta.description}</p>
-              </>}
+              <h1>
+                {view === 'admin' ? (navSections[1].entries.find((entry) => entry.active)?.label ?? pageMeta.title)
+                  : view === 'operations' ? (operationsEntries.find((entry) => entry.active)?.label ?? (platformTab === 'audit' ? 'Audit' : pageMeta.title))
+                  : pageMeta.title}
+                <button type="button" className="ds-header-info" aria-expanded={headerInfoOpen} aria-controls="page-header-description" aria-label="About this page" onClick={() => setHeaderInfoOpen((open) => !open)}><Icon name="alert" /></button>
+              </h1>
+              {headerInfoOpen && <p className="vero-topbar-lede" id="page-header-description">{pageMeta.description}</p>}
             </div>
             <div className="vero-topbar-actions">
               {localMode && (
