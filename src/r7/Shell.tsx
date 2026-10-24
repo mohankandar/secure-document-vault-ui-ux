@@ -1,5 +1,5 @@
-import { useEffect, useMemo, useState } from 'react'
-import { Activity, Building2, FileSearch, FlaskConical, Layers, Moon, Search, ServerCog, ShieldCheck, Sun, ExternalLink, CornerDownLeft } from 'lucide-react'
+import { useEffect, useMemo, useRef, useState } from 'react'
+import { Activity, Building2, FileSearch, FlaskConical, Layers, Moon, Search, ServerCog, ShieldCheck, Sun, ExternalLink, CornerDownLeft, PanelLeftClose, PanelLeftOpen } from 'lucide-react'
 import { AREA_TABS, StoreProvider, useStore, type Scenario } from './store'
 import { ROLES, SYSTEM, FAILURES, STUCK, SUBMISSIONS, type AreaId } from './data'
 import { Drawer, Seg, Toasts } from './ui'
@@ -19,25 +19,42 @@ const AREA_META: Record<AreaId, { label: string; short: string; Icon: typeof Sea
 
 const incidentCount = FAILURES.length + STUCK.length + SUBMISSIONS.filter((s) => s.status === 'INCOMPLETE').length
 
-function Rail({ onOpenSession }: { onOpenSession: () => void }) {
+function useMediaQuery(q: string) {
+  const [m, setM] = useState(() => window.matchMedia(q).matches)
+  useEffect(() => {
+    const mq = window.matchMedia(q)
+    const on = () => setM(mq.matches)
+    mq.addEventListener('change', on)
+    return () => mq.removeEventListener('change', on)
+  }, [q])
+  return m
+}
+
+function Rail({ collapsed, onToggle, onNavigated, onOpenSession }: { collapsed: boolean; onToggle: () => void; onNavigated: () => void; onOpenSession: () => void }) {
   const { role, route, navigate } = useStore()
+  const go = (a: AreaId) => { navigate(a); onNavigated() }
+  const ToggleIcon = collapsed ? PanelLeftOpen : PanelLeftClose
   return (
-    <nav className="v-rail" aria-label="Primary">
+    <nav className="v-rail" id="primary-nav" aria-label="Primary" data-collapsed={collapsed}>
       <div className="v-rail-group">{AREA_META[role.areas[0]].group}</div>
       {role.areas.map((a) => {
         const { label, Icon } = AREA_META[a]
         const attention = a === 'operations' ? incidentCount : 0
+        const name = attention > 0 ? `${label}, ${attention} need attention` : label
         return (
-          <button key={a} type="button" className="v-rail-item" aria-current={route.area === a ? 'page' : undefined} onClick={() => navigate(a)} title={label}>
-            <Icon size={20} aria-hidden /><span className="lbl">{label}</span>
-            {attention > 0 && <><span className="count" aria-label={`${attention} need attention`}>{attention}</span><span className="v-rail-dot" aria-hidden /></>}
+          <button key={a} type="button" className="v-rail-item" aria-current={route.area === a ? 'page' : undefined} onClick={() => go(a)} aria-label={name} data-tip={label}>
+            <Icon size={20} aria-hidden /><span className="lbl" aria-hidden>{label}</span>
+            {attention > 0 && <><span className="count" aria-hidden>{attention}</span><span className="v-rail-dot" aria-hidden /></>}
           </button>
         )
       })}
       <div className="v-rail-foot">
         <div className="v-rail-group">Prototype</div>
-        <button type="button" className="v-rail-item" aria-current={route.area === 'system' ? 'page' : undefined} onClick={() => navigate('system')} title="Design system"><Layers size={20} aria-hidden /><span className="lbl">Design system</span></button>
-        <button type="button" className="v-rail-item" onClick={onOpenSession} title="Prototype session"><FlaskConical size={20} aria-hidden /><span className="lbl">Session & scenarios</span></button>
+        <button type="button" className="v-rail-item" aria-current={route.area === 'system' ? 'page' : undefined} onClick={() => go('system')} aria-label="Design system" data-tip="Design system"><Layers size={20} aria-hidden /><span className="lbl" aria-hidden>Design system</span></button>
+        <button type="button" className="v-rail-item" onClick={onOpenSession} aria-label="Session & scenarios" data-tip="Session & scenarios"><FlaskConical size={20} aria-hidden /><span className="lbl" aria-hidden>Session & scenarios</span></button>
+        <button type="button" className="v-rail-item v-rail-toggle" onClick={onToggle} aria-expanded={!collapsed} aria-controls="primary-nav" aria-label={collapsed ? 'Expand navigation' : 'Collapse navigation'} data-tip="Expand navigation">
+          <ToggleIcon size={20} aria-hidden /><span className="lbl" aria-hidden>Collapse</span><kbd className="v-rail-kbd" aria-hidden>[</kbd>
+        </button>
       </div>
     </nav>
   )
@@ -125,20 +142,40 @@ function Palette({ onClose }: { onClose: () => void }) {
 }
 
 function ShellInner() {
-  const { role, route, theme, setTheme } = useStore()
+  const { role, route, theme, setTheme, navPref, setNavPref, resultsShown } = useStore()
   const [session, setSession] = useState(false)
   const [palette, setPalette] = useState(false)
+  const docked = useMediaQuery('(min-width: 1280px)')
+  const [peek, setPeek] = useState(false)
+
+  // Docked (≥1280px) the rail pushes content and follows navPref. Below that it stays an icon rail and
+  // expanding is a temporary overlay, so the workspace never reflows on tablet widths.
+  const autoCollapsed = route.area === 'workspace' && resultsShown
+  const dockedCollapsed = navPref === 'auto' ? autoCollapsed : navPref === 'collapsed'
+  const collapsed = docked ? dockedCollapsed : !peek
+  const overlay = !docked && peek
+  const toggleNav = () => { if (docked) setNavPref(dockedCollapsed ? 'expanded' : 'collapsed'); else setPeek((p) => !p) }
+
+  useEffect(() => { if (docked) setPeek(false) }, [docked])
 
   useEffect(() => {
-    const k = (e: KeyboardEvent) => { if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'k') { e.preventDefault(); setPalette((p) => !p) } }
+    const k = (e: KeyboardEvent) => {
+      if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'k') { e.preventDefault(); setPalette((p) => !p); return }
+      if (e.key === 'Escape') setPeek(false)
+      const t = e.target as HTMLElement | null
+      const typing = !!t && (t.isContentEditable || /^(INPUT|TEXTAREA|SELECT)$/.test(t.tagName))
+      if (e.key === '[' && !typing && !e.metaKey && !e.ctrlKey && !e.altKey) { e.preventDefault(); toggleRef.current() }
+    }
     window.addEventListener('keydown', k)
     return () => window.removeEventListener('keydown', k)
   }, [])
+  const toggleRef = useRef(toggleNav)
+  toggleRef.current = toggleNav
 
   const allowed = route.area === 'system' || role.areas.includes(route.area)
   return (
     <div className="r7">
-      <div className="v-app">
+      <div className="v-app" data-nav={docked ? (collapsed ? 'collapsed' : 'expanded') : overlay ? 'overlay' : 'rail'}>
         <header className="v-top">
           <a className="v-brand" href="#/" aria-label="vero home" onClick={(e) => { e.preventDefault() }}>vero<i aria-hidden /></a>
           <div className="v-tenant"><strong>{SYSTEM.tenant}</strong><span>{SYSTEM.environment} · {SYSTEM.region}</span></div>
@@ -151,7 +188,8 @@ function ShellInner() {
             <span className="who"><strong>{role.person}</strong><span>{role.name}</span></span>
           </button>
         </header>
-        <Rail onOpenSession={() => setSession(true)} />
+        <Rail collapsed={collapsed} onToggle={toggleNav} onNavigated={() => setPeek(false)} onOpenSession={() => { setPeek(false); setSession(true) }} />
+        {overlay && <div className="v-rail-scrim" onClick={() => setPeek(false)} aria-hidden />}
         <main className="v-main" id="main">
           {!allowed ? <AccessBoundary /> :
             route.area === 'workspace' ? <Workspace /> :

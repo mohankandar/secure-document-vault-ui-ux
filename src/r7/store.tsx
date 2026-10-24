@@ -60,6 +60,8 @@ function useStoreValue() {
   const [audit, setAudit] = useState<AuditEvent[]>(AUDIT)
   const [selectedRef, setSelectedRef] = useState<string | null>(null)
   const [openDocId, setOpenDocId] = useState<string | null>(null)
+  const [navPref, setNavPref] = useState<NavPref>('auto')
+  const [resultsShown, setResultsShown] = useState(false)
 
   const role = ROLES.find((r) => r.id === roleId)!
 
@@ -125,8 +127,12 @@ function useStoreValue() {
     identity, setIdentity: setIdentity as (fn: (prev: typeof IDENTITY) => typeof IDENTITY) => void, audit, recordAudit,
     auth, setAuth, authLab, setAuthLab,
     integrations, setIntegrations, igFields, setIgFields, igOps, setIgOps, igLab, setIgLab,
+    navPref, setNavPref, resultsShown, setResultsShown,
   }
 }
+
+/** `auto` follows the workspace (collapsed while results are shown); an explicit choice is kept until changed. */
+export type NavPref = 'auto' | 'expanded' | 'collapsed'
 
 export type { IdentityConfig }
 
