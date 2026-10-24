@@ -3,12 +3,13 @@ import { CheckCircle2, Circle, History, Pencil, Plus, RotateCcw } from 'lucide-r
 import { AREA_TABS, useStore } from './store'
 import { SYSTEM, type IdentityConfig, type Source, type Volume } from './data'
 import { AreaFrame } from './Governance'
+import { AuthenticationTab } from './Authentication'
 import { Badge, Callout, Dialog, Drawer, Meter, Panel, Scenario, Status, fmtDate, fmtRel } from './ui'
 
 const AUTH_LABEL = { OAUTH2_CLIENT_CREDENTIALS: 'OAuth 2.0 client credentials', JWT_BEARER: 'JWT bearer', MTLS: 'Mutual TLS' } as const
 const LEDE: Record<string, string> = {
   storage: 'Encrypted document volumes for this tenant, with warning and stop-write thresholds.',
-  authentication: 'The enterprise identity provider for sign-in. Test a draft before activating; roll back to a known-good version.',
+  authentication: 'Which enterprise identity provider the server trusts for sign-in, how a staged change gets promoted, and how to recover.',
   integrations: 'Producer systems that submit documents, how they authenticate, and their metadata contract.',
   environment: 'Read-only facts about this customer environment.',
 }
@@ -21,7 +22,7 @@ export function TenantAdmin() {
   return (
     <AreaFrame crumbs={['Tenant IT', tab.label]} title={tab.label} lede={LEDE[route.tab]} attention={volumes.some(volumeAttention) ? ['storage'] : []}>
       {route.tab === 'storage' && <StorageTab editable />}
-      {route.tab === 'authentication' && <AuthTab />}
+      {route.tab === 'authentication' && <AuthenticationTab />}
       {route.tab === 'integrations' && <IntegrationsTab />}
       {route.tab === 'environment' && <EnvironmentPanel />}
     </AreaFrame>

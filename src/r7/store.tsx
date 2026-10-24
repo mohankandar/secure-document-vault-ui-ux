@@ -4,7 +4,10 @@ import {
   type AreaId, type AuditEvent, type Capability, type Doc, type IdentityConfig, type RecordItem, type RoleId, type Source, type Volume, NOW,
 } from './data'
 
+import { authFixture, type AuthScenario, type IdentityOverview, type ServerResponse } from './auth-data'
+
 export type Scenario = 'live' | 'loading' | 'empty' | 'error'
+export type AuthLab = { scenario: AuthScenario; nextTest: 'PASSED' | 'FAILED'; server: ServerResponse }
 export type Theme = 'light' | 'dark'
 export type Toast = { id: number; title: string; detail?: string; tone?: 'sim' | 'ok' | 'bad' }
 export type Route = { area: AreaId; tab: string }
@@ -47,6 +50,8 @@ function useStoreValue() {
   const [volumes, setVolumes] = useState<Volume[]>(VOLUMES)
   const [sources, setSources] = useState<Source[]>(SOURCES)
   const [identity, setIdentity] = useState(IDENTITY)
+  const [auth, setAuth] = useState<IdentityOverview>(() => authFixture('untested'))
+  const [authLab, setAuthLab] = useState<AuthLab>({ scenario: 'untested', nextTest: 'PASSED', server: 'accept' })
   const [audit, setAudit] = useState<AuditEvent[]>(AUDIT)
   const [selectedRef, setSelectedRef] = useState<string | null>(null)
   const [openDocId, setOpenDocId] = useState<string | null>(null)
@@ -113,6 +118,7 @@ function useStoreValue() {
     records, updateDoc, addDocActivity, selectedRef, setSelectedRef, openDocId, setOpenDocId,
     retention, setRetention, volumes, setVolumes, sources, setSources,
     identity, setIdentity: setIdentity as (fn: (prev: typeof IDENTITY) => typeof IDENTITY) => void, audit, recordAudit,
+    auth, setAuth, authLab, setAuthLab,
   }
 }
 
