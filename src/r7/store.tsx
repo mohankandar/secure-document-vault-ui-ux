@@ -5,6 +5,7 @@ import {
 } from './data'
 
 import { authFixture, type AuthScenario, type IdentityOverview, type ServerResponse } from './auth-data'
+import { FIELDS, INTEGRATIONS, OPS, type IgLab, type Integration, type OpsSummary, type SourceField } from './integrations-data'
 
 export type Scenario = 'live' | 'loading' | 'empty' | 'error'
 export type AuthLab = { scenario: AuthScenario; nextTest: 'PASSED' | 'FAILED'; server: ServerResponse }
@@ -52,6 +53,10 @@ function useStoreValue() {
   const [identity, setIdentity] = useState(IDENTITY)
   const [auth, setAuth] = useState<IdentityOverview>(() => authFixture('untested'))
   const [authLab, setAuthLab] = useState<AuthLab>({ scenario: 'untested', nextTest: 'PASSED', server: 'accept' })
+  const [integrations, setIntegrations] = useState<Integration[]>(INTEGRATIONS)
+  const [igFields, setIgFields] = useState<Record<string, SourceField[]>>(FIELDS)
+  const [igOps, setIgOps] = useState<Record<string, OpsSummary>>(OPS)
+  const [igLab, setIgLab] = useState<IgLab>({ server: 'accept', ops: 'available', canConfigure: true })
   const [audit, setAudit] = useState<AuditEvent[]>(AUDIT)
   const [selectedRef, setSelectedRef] = useState<string | null>(null)
   const [openDocId, setOpenDocId] = useState<string | null>(null)
@@ -119,6 +124,7 @@ function useStoreValue() {
     retention, setRetention, volumes, setVolumes, sources, setSources,
     identity, setIdentity: setIdentity as (fn: (prev: typeof IDENTITY) => typeof IDENTITY) => void, audit, recordAudit,
     auth, setAuth, authLab, setAuthLab,
+    integrations, setIntegrations, igFields, setIgFields, igOps, setIgOps, igLab, setIgLab,
   }
 }
 

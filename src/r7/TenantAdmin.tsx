@@ -1,12 +1,12 @@
 import { useState } from 'react'
-import { CheckCircle2, Circle, History, Pencil, Plus, RotateCcw } from 'lucide-react'
+import { CheckCircle2, Circle, Pencil, Plus, RotateCcw } from 'lucide-react'
 import { AREA_TABS, useStore } from './store'
-import { SYSTEM, type IdentityConfig, type Source, type Volume } from './data'
+import { SYSTEM, type IdentityConfig, type Volume } from './data'
 import { AreaFrame } from './Governance'
 import { AuthenticationTab } from './Authentication'
-import { Badge, Callout, Dialog, Drawer, Meter, Panel, Scenario, Status, fmtDate, fmtRel } from './ui'
+import { IntegrationsTab } from './Integrations'
+import { Badge, Callout, Dialog, Drawer, Meter, Panel, Scenario, Status, fmtDate } from './ui'
 
-const AUTH_LABEL = { OAUTH2_CLIENT_CREDENTIALS: 'OAuth 2.0 client credentials', JWT_BEARER: 'JWT bearer', MTLS: 'Mutual TLS' } as const
 const LEDE: Record<string, string> = {
   storage: 'Encrypted document volumes for this tenant, with warning and stop-write thresholds.',
   authentication: 'Which enterprise identity provider the server trusts for sign-in, how a staged change gets promoted, and how to recover.',
@@ -183,64 +183,6 @@ function DraftDrawer({ draft, onClose, onSave }: { draft: IdentityConfig; onClos
       <label className="v-field"><span>Browser client ID</span><input className="v-input mono" value={d.clientId} onChange={(e) => setD({ ...d, clientId: e.target.value })} /></label>
       <label className="v-field"><span>API audience</span><input className="v-input mono" value={d.audience} onChange={(e) => setD({ ...d, audience: e.target.value })} /></label>
       <label className="v-field"><span>Roles claim</span><input className="v-input mono" value={d.rolesClaim} onChange={(e) => setD({ ...d, rolesClaim: e.target.value })} /><small>Token claim containing SDV role codes.</small></label>
-    </Drawer>
-  )
-}
-
-function IntegrationsTab() {
-  const { sources, setSources, toast, recordAudit } = useStore()
-  const [edit, setEdit] = useState<Source | null>(null)
-  return (
-    <>
-      <Panel flush title="Ingestion integrations" meta={sources.length} description="Each source authenticates to the ingestion API with machine credentials. SDV stores a reference, never the secret.">
-        <Scenario what="integrations" empty={<p className="faint" style={{ padding: 16 }}>No integrations configured. Add a producer source to define its technical contract.</p>}>
-          <table className="v-table">
-            <thead><tr><th>Source</th><th>Status</th><th>Authentication</th><th className="num">Documents</th><th>Last activity</th><th className="act"><span className="sr-only">Edit</span></th></tr></thead>
-            <tbody>{sources.map((s) => (
-              <tr key={s.id}>
-                <td className="lead" data-label="Source"><div className="stack" style={{ gap: 0 }}><strong style={{ fontWeight: 500 }}>{s.name}</strong><span className="mono faint" style={{ fontSize: 12 }}>{s.key}</span></div></td>
-                <td data-label="Status"><Status value={s.status} label={s.status === 'ACTIVE' ? 'Active' : 'Disabled'} /></td>
-                <td data-label="Authentication">{AUTH_LABEL[s.authType]}</td>
-                <td className="num" data-label="Documents">{s.documents.toLocaleString()}</td>
-                <td data-label="Last activity">{fmtRel(s.lastActivityAt)}</td>
-                <td className="act"><button type="button" className="v-btn sm" onClick={() => setEdit(s)}><Pencil size={14} aria-hidden />Manage</button></td>
-              </tr>
-            ))}</tbody>
-          </table>
-        </Scenario>
-      </Panel>
-      {edit && <SourceDrawer source={edit} onClose={() => setEdit(null)} onSave={(s) => {
-        setSources((l) => l.map((x) => (x.id === s.id ? s : x)))
-        recordAudit({ action: 'INGESTION_SOURCE_UPDATED', targetType: 'INGESTION_SOURCE', target: s.key, outcome: 'SUCCESS', details: { simulated: 'true' } })
-        toast({ title: 'Integration saved (simulated)', detail: s.name }); setEdit(null)
-      }} />}
-    </>
-  )
-}
-
-function SourceDrawer({ source, onClose, onSave }: { source: Source; onClose: () => void; onSave: (s: Source) => void }) {
-  const [s, setS] = useState(source)
-  return (
-    <Drawer eyebrow="Integration" title={source.name} onClose={onClose} footer={<><button type="button" className="v-btn" onClick={onClose}>Cancel</button><button type="button" className="v-btn primary" disabled={!s.name.trim() || !s.credentialRef.trim()} onClick={() => onSave(s)}>Save integration</button></>}>
-      <dl className="v-kv"><div><dt>Source key</dt><dd className="mono">{s.key} <span className="faint">· immutable</span></dd></div></dl>
-      <label className="v-field"><span>Display name</span><input className="v-input" value={s.name} onChange={(e) => setS({ ...s, name: e.target.value })} /></label>
-      <div className="row" style={{ alignItems: 'flex-start' }}>
-        <label className="v-field grow"><span>Status</span><select className="v-select" value={s.status} onChange={(e) => setS({ ...s, status: e.target.value as Source['status'] })}><option value="ACTIVE">Active</option><option value="DISABLED">Disabled</option></select></label>
-        <label className="v-field grow"><span>Authentication</span><select className="v-select" value={s.authType} onChange={(e) => setS({ ...s, authType: e.target.value as Source['authType'] })}>{Object.entries(AUTH_LABEL).map(([k, v]) => <option key={k} value={k}>{v}</option>)}</select></label>
-      </div>
-      <label className="v-field"><span>Credential reference</span><input className="v-input mono" value={s.credentialRef} onChange={(e) => setS({ ...s, credentialRef: e.target.value })} /><small>Reference only. SDV never displays the secret value.</small></label>
-      {source.status === 'ACTIVE' && s.status === 'DISABLED' && <Callout tone="warn" title="Disabling stops new submissions">In-flight submissions from this source will be rejected. Stored documents stay available.</Callout>}
-      <div className="stack" style={{ gap: 4 }}>
-        <h3>Operational summary</h3>
-        <dl className="v-kv cols"><div><dt>Submissions</dt><dd>{s.submissions.toLocaleString()}</dd></div><div><dt>Documents</dt><dd>{s.documents.toLocaleString()}</dd></div><div><dt>Created</dt><dd>{fmtDate(s.createdAt)}</dd></div><div><dt>Last activity</dt><dd>{fmtRel(s.lastActivityAt)}</dd></div></dl>
-      </div>
-      <div className="stack" style={{ gap: 8 }}>
-        <div className="row between"><h3>Metadata contract</h3><span className="faint" style={{ fontSize: 13 }}>{s.fields.length} fields</span></div>
-        <ul className="stack" style={{ listStyle: 'none', margin: 0, padding: 0, gap: 6 }}>
-          {s.fields.map((f) => <li key={f.key} className="row between" style={{ padding: '8px 12px', border: '1px solid var(--line)', borderRadius: 7 }}><span className="mono">{f.key}</span><span className="row">{f.required && <Badge>required</Badge>}<Badge tone="outline">{f.type}</Badge></span></li>)}
-        </ul>
-        <small className="faint"><History size={12} aria-hidden style={{ verticalAlign: -2 }} /> Field keys are defined here. Business Administration controls labels and matching.</small>
-      </div>
     </Drawer>
   )
 }
