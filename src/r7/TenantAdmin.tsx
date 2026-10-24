@@ -92,7 +92,7 @@ function AuthTab() {
   const checks = ['Issuer discovery document reachable', 'Signing keys (JWKS) retrieved', 'Browser client accepted by issuer', 'Roles claim present in sample token']
   return (
     <>
-      <Panel title="Active configuration" meta={`v${a.version}`} actions={<Status value="ACTIVE" label="In use" />}>
+      <Panel title="Active binding" meta={`v${a.version}`} description="LIVE · Trusted OIDC configuration used for sign-in right now. Saving or testing a draft does not change this binding." actions={<Status value="ACTIVE" label="Live" />}>
         <Scenario what="identity configuration">
           <dl className="v-kv cols">
             <div><dt>Provider</dt><dd>{a.name}</dd></div><div><dt>Type</dt><dd>{a.type}</dd></div>
@@ -102,14 +102,14 @@ function AuthTab() {
           </dl>
         </Scenario>
       </Panel>
-      <Panel title={d ? `Draft v${d.version}` : 'Draft'} description="Change identity safely: edit a draft, test it against the provider, then activate atomically."
+      <Panel title="Staged configuration" description="DRAFT · NOT LIVE. Save, test, then activate the validated configuration. This prototype simulates identity operations."
         actions={d && <button type="button" className="v-btn sm" onClick={() => setEditDraft(true)}><Pencil size={14} aria-hidden />Edit draft</button>}>
         {!d ? (
           <div className="stack"><p className="muted">No draft in progress.</p><button type="button" className="v-btn" style={{ alignSelf: 'flex-start' }} onClick={() => setIdentity((s) => ({ ...s, draft: { ...s.active, version: s.active.version + 1, updatedAt: new Date().toISOString(), updatedBy: role.person } }))}><Plus size={15} aria-hidden />Start draft from active</button></div>
         ) : (
           <div className="stack-lg">
             <dl className="v-kv cols">
-              <div><dt>Browser client</dt><dd className="mono">{d.clientId}{d.clientId !== a.clientId && <> <Badge tone="warn">changed</Badge></>}</dd></div>
+              <div><dt>Provider</dt><dd>{d.name}</dd></div><div><dt>Draft version</dt><dd>v{d.version}</dd></div><div><dt>Issuer</dt><dd className="mono">{d.issuer}</dd></div><div><dt>Browser client</dt><dd className="mono">{d.clientId}{d.clientId !== a.clientId && <> <Badge tone="warn">changed</Badge></>}</dd></div><div><dt>API audience</dt><dd>{d.audience}</dd></div><div><dt>Connection test</dt><dd>{test === 'passed' ? 'Passed (simulated)' : test === 'running' ? 'Running (simulated)' : 'Not tested'}</dd></div>
               <div><dt>Roles claim</dt><dd className="mono">{d.rolesClaim}{d.rolesClaim !== a.rolesClaim && <> <Badge tone="warn">changed</Badge></>}</dd></div>
             </dl>
             <ol className="stack" style={{ listStyle: 'none', margin: 0, padding: 0, gap: 8 }}>
@@ -129,7 +129,7 @@ function AuthTab() {
           </div>
         )}
       </Panel>
-      <Panel flush title="Known-good rollback" meta={identity.rollback.length} description="Previously active configurations. Rollback atomically replaces the active binding.">
+      <Panel flush title="Known-good rollback" meta={identity.rollback.length} description="Previously active trusted configurations. In this prototype, rollback changes only local simulated state.">
         <Scenario what="rollback targets" empty={<p className="faint" style={{ padding: 16 }}>The previously active configuration will appear here after the first activation.</p>}>
           <table className="v-table">
             <thead><tr><th>Version</th><th>Provider</th><th>Client</th><th>Last active</th><th className="act"><span className="sr-only">Rollback</span></th></tr></thead>
